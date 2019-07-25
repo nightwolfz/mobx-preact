@@ -1,0 +1,42 @@
+{
+  "exclude": "node_modules/**",
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "debug": true,
+        "loose": true,
+        "useBuiltIns": "usage",
+        "corejs": 3,
+        "targets": {
+          "browsers": [
+            "> 1%",
+            "not ie 11",
+            "not op_mini all"
+          ]
+        },
+      }
+    ]
+  ],
+  "plugins": [
+    [
+      "@babel/plugin-transform-react-jsx",
+      {
+        "pragma": "h",
+        "pragmaFrag": "Fragment"
+      }
+    ],
+    [
+      "@babel/plugin-proposal-decorators",
+      {
+        "legacy": true
+      }
+    ],
+    [
+      "@babel/plugin-proposal-class-properties",
+      {
+        "loose": true
+      }
+    ]
+  ]
+}

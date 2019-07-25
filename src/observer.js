@@ -261,6 +261,7 @@ export function observer(componentClass) {
 function mixinLifecycleEvents(target) {
     patch(target, 'componentWillMount', true);
     patch(target, 'componentDidMount');
+    patch(target, 'componentWillUnmount');
 
     if (!target.shouldComponentUpdate) {
         target.shouldComponentUpdate = reactiveMixin.shouldComponentUpdate;

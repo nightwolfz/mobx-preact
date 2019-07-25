@@ -29,7 +29,7 @@ function createStoreInjector(grabStoresFn, component, injectNames) {
             // See this test: 'using a custom injector is not too reactive' in inject.js
             const newProps = {};
             for (let key in this.props) {
-                if (this.props.hasOwnProperty(key)) {
+                if (Object.prototype.hasOwnProperty.call(this.props, key)) {
                     newProps[key] = this.props[key];
                 }
             }
