@@ -9,5 +9,5 @@ declare module 'mobx-preact' {
 
   export function connect(stores: string[]): <T extends ComponentType>(target: T) => T;
 
-  export abstract class Provider extends Component { }
+  export abstract class Provider extends Component<any> { }
 }
