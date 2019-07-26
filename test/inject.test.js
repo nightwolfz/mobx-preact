@@ -71,7 +71,6 @@ describe('inject based context', () => {
     });
 
     test('overriding stores is supported', () => {
-
         const C = inject('foo', 'bar')(
             observer(
                 class extends Component {
@@ -136,7 +135,6 @@ describe('inject based context', () => {
     });
 
     test('inject merges (and overrides) props', done => {
-
         const C = inject(() => ({ a: 1 }))(
             observer(
                 class extends Component {
@@ -202,7 +200,6 @@ describe('inject based context', () => {
     }, 'not sure if this applicable any more, with passing stores via observer being removed');
 
     test('custom storesToProps', () => {
-
         class B extends Component {
             render() {
                 return <C baz={42}/>;
