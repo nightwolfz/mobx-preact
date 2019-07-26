@@ -1,9 +1,9 @@
 /* eslint no-console: 0 */
 
-import { h, render} from 'preact';
-import { createClass } from 'preact-compat';
-import { observable} from 'mobx';
-import { observer, inject, Provider } from '../src';
+// noinspection ES6UnusedImports
+import { Component, h, render } from 'preact';
+import { observable } from 'mobx';
+import { inject, observer, Provider } from '../src';
 
 import { createTestRoot } from './test-util';
 
@@ -13,87 +13,82 @@ beforeEach(() => {
     testRoot = createTestRoot();
 });
 
+class C1 extends Component {
+    render() {
+        return <div>context:{this.props.foo}</div>;
+    }
+}
+
 describe('observer based context', () => {
     test('basic context', () => {
         const C = inject('foo')(observer(
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         ));
-        const B = () => <C />;
+        const B = () => <C/>;
         const A = () => (
             <Provider foo="bar">
-                <B />
+                <B/>
             </Provider>
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:bar');
     });
 
     test('props override context', () => {
         const C = inject('foo')(observer(
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         ));
-        const B = () => <C foo={42} />;
+        const B = () => <C foo={42}/>;
         const A = () => (
             <Provider foo="bar">
-                <B />
+                <B/>
             </Provider>
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:42');
     });
 
     test('overriding stores is supported', () => {
         const C = observer(
-            inject('foo','bar')(
-                createClass({
+            inject('foo', 'bar')(
+                class extends Component {
                     render() {
                         return (
                             <div>
-                            context:{this.props.foo}
+                                context:{this.props.foo}
                                 {this.props.bar}
                             </div>
                         );
-                    },
-                }))
+                    }
+                },
+            ),
         );
-        const B = () => <C />;
+        const B = () => <C/>;
         const A = () => (
             <Provider foo="bar" bar={1337}>
                 <div>
                     <span>
-                        <B />
+                        <B/>
                     </span>
                     <section>
                         <Provider foo={42}>
-                            <B />
+                            <B/>
                         </Provider>
                     </section>
                 </div>
             </Provider>
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('span').textContent).toBe('context:bar1337');
         expect(testRoot.querySelector('section').textContent).toBe('context:421337');
     });
 
     test('store is not required if prop is available', () => {
         const C = inject('foo')(observer(
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         ));
-        const B = () => <C foo="bar" />;
-        render(<B />, testRoot);
+        const B = () => <C foo="bar"/>;
+        render(<B/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:bar');
     });
 
@@ -102,38 +97,41 @@ describe('observer based context', () => {
         const baseWarn = console.warn;
         console.warn = m => (msg = m);
         const a = observable.box(3);
+
         const C = inject('foo')(observer(
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         ));
+
         const B = observer(
-            createClass({
-                render: () => <C />,
-            })
+            class extends Component {
+                render() {
+                    return <C/>;
+                }
+            },
         );
+
         const A = observer(
-            createClass({
-                render: () => (
-                    <section>
+            class extends Component {
+                render() {
+                    return (<section>
                         <span>{a.get()}</span>,
                         <Provider foo={a.get()}>
-                            <B />
+                            <B/>
                         </Provider>
                     </section>
-                ),
-            })
+                    );
+                }
+            },
         );
-        render(<A />, testRoot);
+
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('span').textContent).toBe('3');
         expect(testRoot.querySelector('div').textContent).toBe('context:3');
         a.set(42);
         expect(testRoot.querySelector('span').textContent).toBe('42');
         expect(testRoot.querySelector('div').textContent).toBe('context:3');
         expect(msg).toBe(
-            'MobX Provider: Provided store \'foo\' has changed. Please avoid replacing stores as the change might not propagate to all children'
+            'MobX Provider: Provided store \'foo\' has changed. Please avoid replacing stores as the change might not propagate to all children',
         );
         console.warn = baseWarn;
     });
@@ -144,30 +142,31 @@ describe('observer based context', () => {
         console.warn = m => (msg = m);
         const a = observable.box(3);
         const C = inject('foo')(observer(
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         ));
+
         const B = observer(
-            createClass({
-                render: () => <C />,
-            })
+            class extends Component {
+                render() {
+                    return <C/>;
+                }
+            },
         );
         const A = observer(
-            createClass({
-                render: () => (
-                    <section>
-                        <span>{a.get()}</span>,
-                        <Provider foo={a.get()} suppressChangedStoreWarning>
-                            <B />
-                        </Provider>
-                    </section>
-                ),
-            })
+            class extends Component {
+                render() {
+                    return (
+                        <section>
+                            <span>{a.get()}</span>,
+                            <Provider foo={a.get()} suppressChangedStoreWarning>
+                                <B/>
+                            </Provider>
+                        </section>
+                    );
+                }
+            },
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('span').textContent).toBe('3');
         expect(testRoot.querySelector('div').textContent).toBe('context:3');
         a.set(42);
@@ -183,8 +182,8 @@ describe('observer based context', () => {
             C: 'bar',
         };
 
-        const B = inject('store')(({ store }) => <div class="b">{ store.B }</div>);
-        const C = inject('store')(({ store }) => <div class="c">{ store.C }</div>);
+        const B = inject('store')(({ store }) => <div class="b">{store.B}</div>);
+        const C = inject('store')(({ store }) => <div class="c">{store.C}</div>);
         const A = () => (
             <Provider store={store}>
                 <B/>

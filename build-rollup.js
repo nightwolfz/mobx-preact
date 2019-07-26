@@ -19,7 +19,7 @@ function build(format, filename, { min = false } = {}) {
 
     if (min) {
         plugins.push(
-            terser()
+            terser(),
         );
     }
     plugins.push(filesize());

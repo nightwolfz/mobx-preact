@@ -1,10 +1,10 @@
 /* eslint no-console: 0 */
 
-import { h, Component, render  } from 'preact';
-import { createClass } from 'preact-compat';
+// noinspection ES6UnusedImports
+import { Component, h, render } from 'preact';
 import { action, observable } from 'mobx';
-import { observer, inject, Provider } from '../src';
-import { createTestRoot, pause, disabledTest } from './test-util';
+import { inject, observer, Provider } from '../src';
+import { createTestRoot, disabledTest, pause } from './test-util';
 
 test.disable = disabledTest;
 let testRoot;
@@ -13,71 +13,68 @@ beforeEach(() => {
     testRoot = createTestRoot();
 });
 
+class C1 extends Component {
+    render() {
+        return <div>context:{this.props.foo}</div>;
+    }
+}
+
 describe('inject based context', () => {
     test('basic context', () => {
         const C = inject('foo')(
             observer(
-                createClass({
-                    render() {
-                        return <div>context:{this.props.foo}</div>;
-                    },
-                })
-            )
+                C1,
+            ),
         );
-        const B = () => <C />;
+        const B = () => <C/>;
         const A = () => (
             <Provider foo="bar">
-                <B />
+                <B/>
             </Provider>
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:bar');
     });
 
     test('props as render args', () => {
         const C = inject('foo')(
             observer(
-                createClass({
+                class extends Component {
                     render({ foo }) {
                         return <div>context:{foo}</div>;
-                    },
-                })
-            )
+                    }
+                },
+            ),
         );
-        const B = () => <C />;
+        const B = () => <C/>;
         const A = () => (
             <Provider foo="bar">
-                <B />
+                <B/>
             </Provider>
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:bar');
     });
 
     test('props override context', () => {
         const C = inject('foo')(
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         );
-        const B = () => <C foo={42} />;
-        const A = createClass({
-            render: () => (
-                <Provider foo="bar">
-                    <B />
-                </Provider>
-            ),
-        });
-        render(<A />, testRoot);
+        const B = () => <C foo={42}/>;
+        const A = () => (
+            <Provider foo="bar">
+                <B/>
+            </Provider>
+        );
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:42');
     });
 
     test('overriding stores is supported', () => {
+
         const C = inject('foo', 'bar')(
             observer(
-                createClass({
+                class extends Component {
                     render() {
                         return (
                             <div>
@@ -85,28 +82,26 @@ describe('inject based context', () => {
                                 {this.props.bar}
                             </div>
                         );
-                    },
-                })
-            )
-        );
-        const B = () => <C />;
-        const A = createClass({
-            render: () => (
-                <Provider foo="bar" bar={1337}>
-                    <div>
-                        <span>
-                            <B />
-                        </span>
-                        <section>
-                            <Provider foo={42}>
-                                <B />
-                            </Provider>
-                        </section>
-                    </div>
-                </Provider>
+                    }
+                },
             ),
-        });
-        render(<A />, testRoot);
+        );
+        const B = () => <C/>;
+        const A = () => (
+            <Provider foo="bar" bar={1337}>
+                <div>
+                    <span>
+                        <B/>
+                    </span>
+                    <section>
+                        <Provider foo={42}>
+                            <B/>
+                        </Provider>
+                    </section>
+                </div>
+            </Provider>
+        );
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('span').textContent).toBe('context:bar1337');
         expect(testRoot.querySelector('section').textContent).toBe('context:421337');
     });
@@ -114,55 +109,47 @@ describe('inject based context', () => {
     test('store should be available', () => {
         const C = inject('foo')(
             observer(
-                createClass({
-                    render() {
-                        return <div>context:{this.props.foo}</div>;
-                    },
-                })
-            )
-        );
-        const B = () => <C />;
-        const A = createClass({
-            render: () => (
-                <Provider baz={42}>
-                    <B />
-                </Provider>
+                C1,
             ),
-        });
-        expect(() => render(<A />, testRoot)).toThrow(
-            /Store 'foo' is not available! Make sure it is provided by some Provider/
+        );
+        const B = () => <C/>;
+        const A = () => (
+            <Provider baz={42}>
+                <B/>
+            </Provider>
+        );
+
+        expect(() => render(<A/>, testRoot)).toThrow(
+            /Store 'foo' is not available! Make sure it is provided by some Provider/,
         );
     });
 
     test('store is not required if prop is available', () => {
         const C = inject('foo')(
             observer(
-                createClass({
-                    render() {
-                        return <div>context:{this.props.foo}</div>;
-                    },
-                })
-            )
+                C1,
+            ),
         );
-        const B = () => <C foo="bar" />;
-        render(<B />, testRoot);
+        const B = () => <C foo="bar"/>;
+        render(<B/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:bar');
     });
 
     test('inject merges (and overrides) props', done => {
+
         const C = inject(() => ({ a: 1 }))(
             observer(
-                createClass({
+                class extends Component {
                     render() {
                         expect(this.props).toEqual({ a: 1, b: 2 });
                         done();
                         return null;
-                    },
-                })
-            )
+                    }
+                },
+            ),
         );
-        const B = () => <C a={2} b={2} />;
-        render(<B />, testRoot);
+        const B = () => <C a={2} b={2}/>;
+        render(<B/>, testRoot);
     });
 
     // TODO: not sure if this applicable any more, with passing stores via observer being removed
@@ -173,30 +160,32 @@ describe('inject based context', () => {
         const a = observable(3);
         const C = observer(
             ['foo'],
-            createClass({
-                render() {
-                    return <div>context:{this.props.foo}</div>;
-                },
-            })
+            C1,
         );
+
         const B = observer(
-            createClass({
-                render: () => <C />,
-            })
+            class extends Component {
+                render() {
+                    return <C/>;
+                }
+            },
         );
+
         const A = observer(
-            createClass({
-                render: () => (
-                    <section>
-                        <span>{a.get()}</span>
-                        <Provider foo={a.get()}>
-                            <B />
-                        </Provider>
-                    </section>
-                ),
-            })
+            class extends Component {
+                render() {
+                    return (
+                        <section>
+                            <span>{a.get()}</span>
+                            <Provider foo={a.get()}>
+                                <B/>
+                            </Provider>
+                        </section>
+                    );
+                }
+            },
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
 
         expect(testRoot.querySelector('span').textContent).toBe('3');
         expect(testRoot.querySelector('div').textContent).toBe('context:3');
@@ -207,23 +196,30 @@ describe('inject based context', () => {
         expect(testRoot.querySelector('div').textContent).toBe('context:3');
 
         expect(msg).toBe(
-            'MobX Provider: Provided store \'foo\' has changed. Please avoid replacing stores as the change might not propagate to all children'
+            'MobX Provider: Provided store \'foo\' has changed. Please avoid replacing stores as the change might not propagate to all children',
         );
         console.warn = baseWarn;
     }, 'not sure if this applicable any more, with passing stores via observer being removed');
 
     test('custom storesToProps', () => {
+
+        class B extends Component {
+            render() {
+                return <C baz={42}/>;
+            }
+        }
+
         const C = inject((stores, props, context) => {
             expect(context).toEqual({ mobxStores: { foo: 'bar' } });
             expect(stores).toEqual({ foo: 'bar' });
-            expect(props).toEqual({ baz: 42, children: [] });
+            expect(props).toEqual({ baz: 42 });
             return {
                 zoom: stores.foo,
                 baz: props.baz * 2,
             };
         })(
             observer(
-                createClass({
+                class extends Component {
                     render() {
                         return (
                             <div>
@@ -231,19 +227,16 @@ describe('inject based context', () => {
                                 {this.props.baz}
                             </div>
                         );
-                    },
-                })
-            )
+                    }
+                },
+            ),
         );
-        const B = createClass({
-            render: () => <C baz={42} />,
-        });
         const A = () => (
             <Provider foo="bar">
-                <B />
+                <B/>
             </Provider>
         );
-        render(<A />, testRoot);
+        render(<A/>, testRoot);
         expect(testRoot.querySelector('div').textContent).toBe('context:bar84');
     });
 
@@ -256,6 +249,7 @@ describe('inject based context', () => {
                 return null;
             }
         }
+
         B.bla = 17;
         B.bla2 = {};
         const C = inject('booh')(B);
@@ -265,7 +259,7 @@ describe('inject based context', () => {
         expect(C.bla).toBe(17);
         expect(C.bla2 === B.bla2).toBe(true);
 
-        render(<C booh={42} />, testRoot);
+        render(<C booh={42}/>, testRoot);
     });
 
     test('using a custom injector is reactive', () => {
@@ -275,10 +269,10 @@ describe('inject based context', () => {
         const User = inject(mapper)(DisplayName);
         const App = () => (
             <Provider user={user}>
-                <User />
+                <User/>
             </Provider>
         );
-        render(<App />, testRoot);
+        render(<App/>, testRoot);
 
         expect(testRoot.querySelector('h1').textContent).toBe('Noa');
 
@@ -296,7 +290,8 @@ describe('inject based context', () => {
         }
 
         class State {
-            @observable highlighted = null
+            @observable highlighted = null;
+
             isHighlighted(item) {
                 return this.highlighted == item;
             }
@@ -304,7 +299,7 @@ describe('inject based context', () => {
             @action
             highlight = item => {
                 this.highlighted = item;
-            }
+            };
         }
 
         const items = observable([
@@ -323,7 +318,7 @@ describe('inject based context', () => {
                 listRender++;
                 const { items } = this.props;
 
-                return <ul>{items.map(item => <ItemComponent key={item.title} item={item} />)}</ul>;
+                return <ul>{items.map(item => <ItemComponent key={item.title} item={item}/>)}</ul>;
             }
         }
 
@@ -343,7 +338,7 @@ describe('inject based context', () => {
             highlight = () => {
                 const { item, highlight } = this.props;
                 highlight(item);
-            }
+            };
 
             render() {
                 itemRender++;
@@ -358,7 +353,7 @@ describe('inject based context', () => {
 
         render(
             <Provider state={state}>
-                <ListComponent items={items} />
+                <ListComponent items={items}/>
             </Provider>,
             testRoot);
 
