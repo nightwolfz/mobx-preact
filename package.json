@@ -1,13 +1,13 @@
 {
-  "name": "@softmotions/mobx-preact",
-  "version": "3.1.1",
+  "name": "mobx-preact",
+  "version": "3.1.0",
   "description": "Mobx bindings specifically for Preact",
   "main": "lib/index.js",
   "module": "lib/index.module.js",
   "types": "types.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Softmotions/mobx-preact.git"
+    "url": "git+https://github.com/philmander/mobx-preact.git"
   },
   "scripts": {
     "lint": "eslint src test --fix",
