@@ -1,6 +1,6 @@
 declare module '@softmotions/mobx-preact' {
-  import { ComponentConstructor } from 'preact';
-  type ComponentClass<P = any> = ComponentConstructor<P>;
+  import { ComponentType } from 'preact';
+  type ComponentClass<P = any> = ComponentType<P>;
 
   export function observer<T extends ComponentClass>(target: T): T;
 
