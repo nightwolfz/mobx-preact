@@ -1,13 +1,15 @@
 declare module 'mobx-preact' {
-  import { ComponentType, Component } from 'preact';
+  import { ComponentClass, FunctionComponent, Component } from 'preact';
 
-  export function observer<T extends ComponentType>(target: T): T;
+  type PreactComponent<P = any> = ComponentClass<P> | FunctionComponent<P>;
 
-  export function inject(...stores: string[]): <T extends ComponentType>(target: T) => T;
+  export function observer<T extends PreactComponent>(target: T): T;
 
-  export function inject(sfn: Function): <T extends ComponentType>(target: T) => T;
+  export function inject(...stores: string[]): <T extends PreactComponent>(target: T) => T;
 
-  export function connect(stores: string[]): <T extends ComponentType>(target: T) => T;
+  export function inject(sfn: Function): <T extends PreactComponent>(target: T) => T;
+
+  export function connect(stores: string[]): <T extends PreactComponent>(target: T) => T;
 
   export abstract class Provider extends Component<any> { }
 }
