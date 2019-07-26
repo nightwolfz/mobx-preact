@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
-import { h, Component, render  } from 'preact';
-import { createClass } from 'preact-compat';
+// noinspection ES6UnusedImports
+import { Component, h, render } from 'preact';
 import { observable } from 'mobx';
 import { connect, Provider } from '../src';
 import { createTestRoot } from './test-util';
@@ -17,12 +17,12 @@ describe('inject based context', () => {
         const store = {
             @observable foo: 'bar',
         };
-        const C = connect([ 'store' ],
-            createClass({
+        const C = connect(['store'],
+            class extends Component {
                 render({ store }) {
-                    return <div>context:{store.foo}</div>;
-                },
-            })
+                    return (<div>context:{store.foo}</div>);
+                }
+            },
         );
         const B = () => <C/>;
         const A = () => (
@@ -40,12 +40,14 @@ describe('inject based context', () => {
         const store = {
             @observable foo: 'bar',
         };
-        @connect([ 'store' ])
+
+        @connect(['store'])
         class C extends Component {
-            render({store}) {
+            render({ store }) {
                 return <div>context:{store.foo}</div>;
             }
         }
+
         const B = () => <C/>;
         const A = () => (
             <Provider store={store}>

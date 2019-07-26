@@ -1,5 +1,5 @@
-import { createAtom, Reaction, _getGlobalState } from 'mobx';
-import { Component } from 'preact';
+import { _getGlobalState, createAtom, Reaction } from 'mobx';
+import { Component, toChildArray } from 'preact';
 import { isStateless, makeDisplayName } from './utils/utils';
 
 let isUsingStaticRendering = false;
@@ -21,6 +21,7 @@ function allowStateChangesStart(allowStateChanges) {
     _getGlobalState().allowStateChanges = allowStateChanges;
     return prev;
 }
+
 function allowStateChangesEnd(prev) {
     _getGlobalState().allowStateChanges = prev;
 }
@@ -43,21 +44,19 @@ function allowStateChanges(allowStateChanges, func, props, state, context) {
 function patch(target, funcName, runMixinFirst = false) {
     const base = target[funcName];
     const mixinFunc = reactiveMixin[funcName];
-    const f = !base
+    // MWE: ideally we freeze here to protect against accidental overwrites in component instances, see #195
+    // ...but that breaks react-hot-loader, see #231...
+    target[funcName] = !base
         ? mixinFunc
         : runMixinFirst === true
-            ? function() {
+            ? function () {
                 mixinFunc.apply(this, arguments);
                 base.apply(this, arguments);
             }
-            : function() {
+            : function () {
                 base.apply(this, arguments);
                 mixinFunc.apply(this, arguments);
             };
-
-    // MWE: ideally we freeze here to protect against accidental overwrites in component instances, see #195
-    // ...but that breaks react-hot-loader, see #231...
-    target[funcName] = f;
 }
 
 function isObjectShallowModified(prev, next) {
@@ -81,7 +80,7 @@ function isObjectShallowModified(prev, next) {
  * ReactiveMixin
  */
 const reactiveMixin = {
-    componentWillMount: function() {
+    componentWillMount: function () {
         if (isUsingStaticRendering === true) {
             return;
         }
@@ -105,7 +104,7 @@ const reactiveMixin = {
             Object.defineProperty(this, propName, {
                 configurable: true,
                 enumerable: true,
-                get: function() {
+                get: function () {
                     atom.reportObserved();
                     return valueHolder;
                 },
@@ -188,7 +187,7 @@ const reactiveMixin = {
         this.render = initialRender;
     },
 
-    componentWillUnmount: function() {
+    componentWillUnmount: function () {
         if (isUsingStaticRendering === true) {
             return;
         }
@@ -196,16 +195,16 @@ const reactiveMixin = {
         this.__$mobxIsUnmounted = true;
     },
 
-    componentDidMount: function() {
+    componentDidMount: function () {
     },
 
-    componentDidUpdate: function() {
+    componentDidUpdate: function () {
     },
 
-    shouldComponentUpdate: function(nextProps, nextState) {
+    shouldComponentUpdate: function (nextProps, nextState) {
         if (isUsingStaticRendering) {
             logger.warn(
-                '[mobx-preact] It seems that a re-rendering of a React component is triggered while in static (server-side) mode. Please make sure components are rendered only once server-side.'
+                '[mobx-preact] It seems that a re-rendering of a React component is triggered while in static (server-side) mode. Please make sure components are rendered only once server-side.',
             );
         }
         // update on any state changes (as is the default)
@@ -224,27 +223,32 @@ const reactiveMixin = {
  * Observer function / decorator
  */
 export function observer(componentClass) {
-    if(arguments.length > 1) {
+    if (arguments.length > 1) {
         logger.warn(
-            'Mobx observer: Using observer to inject stores is not supported. Use `@connect(["store1", "store2"]) ComponentClass instead or preferably, use `@inject("store1", "store2") @observer ComponentClass` or `inject("store1", "store2")(observer(componentClass))``'
+            'Mobx observer: Using observer to inject stores is not supported. ' +
+            'Use `@connect(["store1", "store2"]) ComponentClass instead or preferably, ' +
+            'use `@inject("store1", "store2") @observer ComponentClass` or `inject("store1", "store2")(observer(componentClass))``',
         );
     }
 
     if (componentClass.isMobxInjector === true) {
         logger.warn(
-            'Mobx observer: You are trying to use \'observer\' on a component that already has \'inject\'. Please apply \'observer\' before applying \'inject\''
+            'Mobx observer: You are trying to use \'observer\' on a component that already has \'inject\'. ' +
+            'Please apply \'observer\' before applying \'inject\'',
         );
     }
 
     // Stateless function component:
     if (isStateless(componentClass)) {
+        // noinspection TailRecursionJS
         return observer(
             class extends Component {
-                static displayName = makeDisplayName(componentClass)
+                static displayName = makeDisplayName(componentClass);
+
                 render() {
                     return componentClass.call(this, this.props, this.context);
                 }
-            }
+            },
         );
     }
 
@@ -261,12 +265,16 @@ export function observer(componentClass) {
 function mixinLifecycleEvents(target) {
     patch(target, 'componentWillMount', true);
     patch(target, 'componentDidMount');
+    patch(target, 'componentWillUnmount');
 
     if (!target.shouldComponentUpdate) {
         target.shouldComponentUpdate = reactiveMixin.shouldComponentUpdate;
     }
 }
 
-export const Observer = observer(({ children }) => children[0]() );
+export const Observer = observer(({ children }) => {
+    children = toChildArray(children);
+    return children[0]();
+});
 
 Observer.displayName = 'Observer';

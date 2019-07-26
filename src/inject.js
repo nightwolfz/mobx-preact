@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { Component, h } from 'preact';
 import hoistStatics from 'hoist-non-react-statics';
 import { observer } from './observer';
 import { makeDisplayName } from './utils/utils';
@@ -21,7 +21,7 @@ function createStoreInjector(grabStoresFn, component, injectNames) {
     const displayName = makeDisplayName(component, { prefix, suffix });
 
     class Injector extends Component {
-        static displayName = displayName
+        static displayName = displayName;
 
         render() {
             // Optimization: it might be more efficient to apply the mapper function *outside* the render method
@@ -29,7 +29,7 @@ function createStoreInjector(grabStoresFn, component, injectNames) {
             // See this test: 'using a custom injector is not too reactive' in inject.js
             const newProps = {};
             for (let key in this.props) {
-                if (this.props.hasOwnProperty(key)) {
+                if (Object.prototype.hasOwnProperty.call(this.props, key)) {
                     newProps[key] = this.props[key];
                 }
             }
@@ -52,15 +52,15 @@ function createStoreInjector(grabStoresFn, component, injectNames) {
 }
 
 function grabStoresByName(storeNames) {
-    return function(baseStores, nextProps) {
-        storeNames.forEach(function(storeName) {
+    return function (baseStores, nextProps) {
+        storeNames.forEach(function (storeName) {
             // prefer props over stores
             if (storeName in nextProps) {
                 return;
             }
             if (!(storeName in baseStores)) {
                 throw new Error(
-                    `MobX injector: Store '${storeName}' is not available! Make sure it is provided by some Provider`
+                    `MobX injector: Store '${storeName}' is not available! Make sure it is provided by some Provider`,
                 );
             }
             nextProps[storeName] = baseStores[storeName];
@@ -79,7 +79,7 @@ export function inject(/* fn(stores, nextProps) or ...storeNames */) {
     let grabStoresFn;
     if (typeof arguments[0] === 'function') {
         grabStoresFn = arguments[0];
-        return function(componentClass) {
+        return function (componentClass) {
             let injected = createStoreInjector(grabStoresFn, componentClass);
             injected.isMobxInjector = false; // suppress warning
             // mark the Injector as observer, to make it react to expressions in `grabStoresFn`,
@@ -94,7 +94,7 @@ export function inject(/* fn(stores, nextProps) or ...storeNames */) {
             storeNames[i] = arguments[i];
         }
         grabStoresFn = grabStoresByName(storeNames);
-        return function(componentClass) {
+        return function (componentClass) {
             return createStoreInjector(grabStoresFn, componentClass, storeNames.join('-'));
         };
     }
